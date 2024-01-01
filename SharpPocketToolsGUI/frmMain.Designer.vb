@@ -53,6 +53,7 @@ Partial Class frmMain
         txtLog.Location = New Point(12, 136)
         txtLog.Multiline = True
         txtLog.Name = "txtLog"
+        txtLog.ReadOnly = True
         txtLog.ScrollBars = ScrollBars.Vertical
         txtLog.Size = New Size(807, 391)
         txtLog.TabIndex = 5
