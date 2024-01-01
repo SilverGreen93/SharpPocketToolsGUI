@@ -1,4 +1,4 @@
-﻿Imports System.ComponentModel
+Imports System.ComponentModel
 Imports System.Formats.Tar
 Imports System.IO
 Imports System.Windows.Forms.VisualStyles.VisualStyleElement
@@ -316,6 +316,6 @@ Public Class frmMain
     End Sub
 
     Private Sub linkWeb_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linkWeb.LinkClicked
-        Process.Start("https://github.com/SilverGreen93")
+        Process.Start("explorer.exe", "https://github.com/SilverGreen93/SharpPocketToolsGUI")
     End Sub
 End Class
