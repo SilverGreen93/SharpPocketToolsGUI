@@ -1,4 +1,4 @@
-Imports System.ComponentModel
+﻿Imports System.ComponentModel
 Imports System.Formats.Tar
 Imports System.IO
 Imports System.Windows.Forms.VisualStyles.VisualStyleElement
@@ -7,6 +7,15 @@ Public Class frmMain
 
     Dim filesToPrcess As List(Of String)
 
+    ''' <summary>
+    ''' Execute a process, wait for it to finish and redirect output if needed.
+    ''' </summary>
+    ''' <param name="processName"></param>
+    ''' <param name="processArgs"></param>
+    ''' <param name="outStr"></param>
+    ''' <param name="redirOut"></param>
+    ''' <param name="redirErr"></param>
+    ''' <returns></returns>
     Function ExecuteProcess(processName As String, processArgs As String, ByRef outStr As String, redirOut As Boolean, redirErr As Boolean) As Integer
         Try
             Dim myProcess As New Process()
@@ -41,6 +50,9 @@ Public Class frmMain
 
     End Function
 
+    ''' <summary>
+    ''' Processes the files one by one and calls the required function based by the file extension.
+    ''' </summary>
     Sub ProcessFiles()
         Dim ret As Integer = 0
 
@@ -49,9 +61,11 @@ Public Class frmMain
             If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) Then
                 Dim sharpFileName As String
                 If optUseFilename.Checked = True Then
+                    'Use the specified file name
                     sharpFileName = txtFileName.Text.ToUpper()
                 Else
                     If Path.GetFileNameWithoutExtension(file).Length > txtFileName.MaxLength Then
+                        'Truncate the file name if it is longer than 7 characters (or 16 for Sharp 1500)
                         sharpFileName = Path.GetFileNameWithoutExtension(file).Substring(0, txtFileName.MaxLength).ToUpper()
                         txtLog.Text &= "Warning! Filename is longer than " & txtFileName.MaxLength & " characters! It will be truncated to " & sharpFileName & vbCrLf & vbCrLf
                     Else
@@ -75,10 +89,17 @@ Public Class frmMain
         End If
         txtLog.Text &= "Done." & vbCrLf
 
+        'Always scroll the Log to the end.
         txtLog.SelectionStart = txtLog.Text.Length
         txtLog.ScrollToCaret()
     End Sub
 
+    ''' <summary>
+    ''' Converts a BAS file to audio file
+    ''' </summary>
+    ''' <param name="fileName">The file name and path to the BAS file</param>
+    ''' <param name="sharpFileName">The final name of the file on tape</param>
+    ''' <returns></returns>
     Function ProcessBAS(fileName As String, sharpFileName As String)
         Dim out As String = ""
         Dim ret As Integer
@@ -88,6 +109,7 @@ Public Class frmMain
 
         My.Application.DoEvents()
 
+        'Convert to binary IMG file first.
         imgFile = String.Concat(fileName.AsSpan(0, fileName.Length - 3), "IMG")
 
         ret = ExecuteProcess("ptools\bas2img.exe", "--pc=" & cmbPcModel.Text & " """ & fileName & """ """ & imgFile & """", out, True, False)
@@ -104,6 +126,7 @@ Public Class frmMain
 
         My.Application.DoEvents()
 
+        'Convert binary IMG to WAV file.
         wavFile = Path.GetDirectoryName(fileName) & "\" & sharpFileName & ".WAV"
         If optRename.Checked Then
             If My.Computer.FileSystem.FileExists(wavFile) Then
@@ -130,6 +153,7 @@ Public Class frmMain
         txtLog.Text &= "Deleting temporary img file: " & imgFile & vbCrLf & vbCrLf
         My.Computer.FileSystem.DeleteFile(imgFile)
 
+        'Convert to MP3 if requested.
         If optMp3.Checked Then
             My.Application.DoEvents()
             mp3File = String.Concat(wavFile.AsSpan(0, wavFile.Length - 3), "MP3")
@@ -142,6 +166,7 @@ Public Class frmMain
                     mp3File = String.Concat(wavFile.AsSpan(0, wavFile.Length - 4), " (" & index & ").MP3")
                 End If
             End If
+            '-c number of audio tracks (1=mono), -C bitrate for MP3 (=128kbps), rate = sample rate
             ret = ExecuteProcess("sox\sox.exe", """" & wavFile & """ -c 1 -C 128 """ & mp3File & """ rate 16000", out, False, True)
             txtLog.Text &= out & vbCrLf
             If ret <> 0 Then
@@ -159,12 +184,19 @@ Public Class frmMain
         Return 0
     End Function
 
+    ''' <summary>
+    ''' Converts an audio file to BAS file
+    ''' </summary>
+    ''' <param name="fileName">The file name and path to the audio file</param>
+    ''' <param name="isMp3">If it is MP3 instead of WAV</param>
+    ''' <returns></returns>
     Function ProcessWAV(fileName As String, isMp3 As Boolean)
         Dim out As String = ""
         Dim ret As Integer
         Dim wavFile As String = fileName
         Dim basFile As String
 
+        'Convert MP3 to WAV first if required.
         If isMp3 Then
             My.Application.DoEvents()
             wavFile = String.Concat(fileName.AsSpan(0, fileName.Length - 3), "WAV")
@@ -177,6 +209,7 @@ Public Class frmMain
                     wavFile = String.Concat(fileName.AsSpan(0, fileName.Length - 4), " (" & index & ").WAV")
                 End If
             End If
+            '-c number of audio tracks (1=mono), -b bit depth, rate = sample rate
             ret = ExecuteProcess("sox\sox.exe", """" & fileName & """ -c 1 -b 8 """ & wavFile & """ rate 16000", out, False, True)
             txtLog.Text &= out & vbCrLf
             If ret <> 0 Then
@@ -189,6 +222,7 @@ Public Class frmMain
             End If
         End If
 
+        'Convert WAV to BAS file
         basFile = String.Concat(wavFile.AsSpan(0, wavFile.Length - 3), "BAS")
         If optRename.Checked Then
             If My.Computer.FileSystem.FileExists(basFile) Then
@@ -226,6 +260,7 @@ Public Class frmMain
         filesToPrcess.Clear()
         txtLog.Clear()
 
+        'Add only the supported files to the process queue
         For Each file In files
             If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) OrElse
                 file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) OrElse
@@ -252,6 +287,7 @@ Public Class frmMain
         Text = My.Application.Info.Title & " v" & My.Application.Info.Version.Major & "." & My.Application.Info.Version.Minor
         filesToPrcess = New List(Of String)
 
+        'Load settings
         cmbPcModel.Text = My.Settings.pcModel
 
         If My.Settings.outputFormat = 1 Then
@@ -287,13 +323,16 @@ Public Class frmMain
 
     Private Sub cmbPcModel_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbPcModel.SelectedIndexChanged
         If cmbPcModel.Text = "1500" Then
+            'The only Sharp PC model that supports 16 characters file names.
             txtFileName.MaxLength = 16
         Else
+            'All others support a maximum of 7 characters.
             txtFileName.MaxLength = 7
         End If
     End Sub
 
     Private Sub frmMain_Closing(sender As Object, e As CancelEventArgs) Handles MyBase.Closing
+        'Save settings
         My.Settings.pcModel = cmbPcModel.Text
 
         If optMp3.Checked Then
