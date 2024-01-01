@@ -1,8 +1,8 @@
-# SharpPocketToolsGUI
+# Sharp PocketTools GUI
 
 ![screenshot](screenshot.png?raw=true)
 
-This application helps with converting Sharp Pocket PC BASIC programs from BAS source file to WAV or MP3 or viceversa.
+This application helps with converting Sharp / TRS-80 Pocket PC BASIC programs from BAS source file to WAV or MP3 or viceversa.
 
 The application is a Graphical User Interface for the PocketTools original command line tools found on http://pocket.free.fr/html/soft/soft_e.html or https://www.peil-partner.de/ifhe.de/sharp/
 
@@ -19,3 +19,6 @@ Download the compiled software package from the Releases page, then extract the 
 Drag and drop the BAS source file to convert to audio file to be loaded on Sharp PC, or the audio file to be converted to the BASIC source file. It supports bulk operation if you drag more than one file at a time. The output file is written in the same directory as the source file.
 
 You can set conversion options directly in the main window.
+
+## Resources
+You can find sample ready made programs for Sharp 1211 here: https://github.com/Robert-van-Engelen/119-Practical-Programs-for-the-TRS-80-Pocket-Computer
