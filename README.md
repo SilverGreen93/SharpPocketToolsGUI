@@ -1,5 +1,7 @@
 # SharpPocketToolsGUI
 
+![screenshot](screenshot.png?raw=true)
+
 This application helps with converting Sharp Pocket PC BASIC programs from BAS source file to WAV or MP3 or viceversa.
 
 The application is a Graphical User Interface for the PocketTools original command line tools found on http://pocket.free.fr/html/soft/soft_e.html or https://www.peil-partner.de/ifhe.de/sharp/
