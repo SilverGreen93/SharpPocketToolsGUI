@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -7,10 +7,10 @@
     <UseWindowsForms>true</UseWindowsForms>
     <MyType>WindowsForms</MyType>
     <AssemblyName>Sharp PocketTools GUI</AssemblyName>
-    <AssemblyVersion>1.0</AssemblyVersion>
-    <FileVersion>1.0</FileVersion>
+    <AssemblyVersion>1.1</AssemblyVersion>
+    <FileVersion>1.1</FileVersion>
     <Company>SilverGreen93</Company>
-    <Copyright>Copyright (c) 2024 by SilverGreen93</Copyright>
+    <Copyright>Copyright (c) 2024 SilverGreen93</Copyright>
     <ApplicationIcon>cover.ico</ApplicationIcon>
   </PropertyGroup>
 
