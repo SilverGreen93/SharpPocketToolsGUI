@@ -1,7 +1,9 @@
 ﻿Imports System.ComponentModel
 Imports System.Formats.Tar
 Imports System.IO
+Imports System.Text.RegularExpressions
 Imports System.Windows.Forms.VisualStyles.VisualStyleElement
+Imports Windows.Win32.UI.Input
 
 Public Class frmMain
 
@@ -262,13 +264,22 @@ Public Class frmMain
 
         'Add only the supported files to the process queue
         For Each file In files
-            If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) OrElse
+            If optRenumber.Checked Then
+                If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) Then
+                    txtLog.Text &= "Renumbering " & file & vbCrLf
+                    ChangeLineNumbers(file, numStart.Value, numStep.Value, file)
+                Else
+                    txtLog.Text &= "Unsupported " & file & vbCrLf
+                End If
+            Else
+                If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) OrElse
                 file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) OrElse
                 file.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) Then
-                filesToPrcess.Add(file)
-                txtLog.Text &= "Will process " & file & vbCrLf
-            Else
-                txtLog.Text &= "Unsupported " & file & vbCrLf
+                    filesToPrcess.Add(file)
+                    txtLog.Text &= "Will process " & file & vbCrLf
+                Else
+                    txtLog.Text &= "Unsupported " & file & vbCrLf
+                End If
             End If
         Next
 
@@ -289,6 +300,9 @@ Public Class frmMain
 
         'Load settings
         cmbPcModel.Text = My.Settings.pcModel
+        txtFileName.Text = My.Settings.sharpFileName
+        numStart.Value = My.Settings.startLine
+        numStep.Value = My.Settings.stepLine
 
         If My.Settings.outputFormat = 1 Then
             optMp3.Checked = True
@@ -305,8 +319,11 @@ Public Class frmMain
         Else
             optFromFilename.Checked = True
         End If
-
-        txtFileName.Text = My.Settings.sharpFileName
+        If My.Settings.operation = 1 Then
+            optRenumber.Checked = True
+        Else
+            optConvert.Checked = True
+        End If
     End Sub
 
     Private Sub optUseFilename_CheckedChanged(sender As Object, e As EventArgs) Handles optUseFilename.CheckedChanged
@@ -334,6 +351,9 @@ Public Class frmMain
     Private Sub frmMain_Closing(sender As Object, e As CancelEventArgs) Handles MyBase.Closing
         'Save settings
         My.Settings.pcModel = cmbPcModel.Text
+        My.Settings.sharpFileName = txtFileName.Text
+        My.Settings.startLine = numStart.Value
+        My.Settings.stepLine = numStep.Value
 
         If optMp3.Checked Then
             My.Settings.outputFormat = 1
@@ -350,11 +370,134 @@ Public Class frmMain
         Else
             My.Settings.fileNamePolicy = 0
         End If
+        If optRenumber.Checked Then
+            My.Settings.operation = 1
+        Else
+            My.Settings.operation = 0
+        End If
 
-        My.Settings.sharpFileName = txtFileName.Text
     End Sub
 
     Private Sub linkWeb_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linkWeb.LinkClicked
         Process.Start("explorer.exe", "https://github.com/SilverGreen93/SharpPocketToolsGUI")
+    End Sub
+
+    ''' <summary>
+    ''' Renumber BASIC lines in source files
+    ''' </summary>
+    ''' <param name="fileName">Input file name</param>
+    ''' <param name="start">Start line number</param>
+    ''' <param name="increment">Increment step</param>
+    ''' <param name="finalFile">Output file name</param>
+    Sub ChangeLineNumbers(fileName As String, start As Integer, increment As Integer, finalFile As String)
+        Dim stream As StreamReader
+        Dim newLines As New List(Of String)
+        Dim changedLines As String = ""
+        Dim matchMap As New Hashtable()
+        Dim match As Match
+        Dim lineIndex As Integer = start
+
+        'Read the file line by line, parse each line, create a map between the old line number and the new one.
+        'Write each line into a list of lines.
+        Try
+            stream = New StreamReader(File.Open(fileName, FileMode.Open, FileAccess.Read))
+            While Not stream.EndOfStream
+                Dim line As String = stream.ReadLine()
+                If lineIndex > 999 Then
+                    txtLog.Text &= vbCrLf & "Error: Line number is greater than 999! Please adjust and retry operation!" & vbCrLf & vbCrLf
+                    Return
+                End If
+                match = Regex.Match(line, "^ *[0-9]+") 'match the number at the start of the line
+                If match.Value IsNot "" Then
+                    matchMap.Add(match.Value.Trim(), lineIndex)
+                    Dim newLine = Regex.Replace(line, "^ *[0-9]+", lineIndex.ToString().PadLeft(5))
+                    newLines.Add(newLine)
+                    lineIndex += increment
+                Else
+                    'If line is a comment or empty line, copy as it is.
+                    newLines.Add(line)
+                End If
+            End While
+            stream.Close()
+        Catch ex As Exception
+            txtLog.Text &= "Error opening file: " & fileName & vbCrLf & ex.Message & vbCrLf
+            Return
+        End Try
+
+        'Parse lines again to find GOTO or GOSUB statements to replace the line numbers
+        For Each line In newLines
+            match = Regex.Match(line, "^ *[']") 'skip lines starting with comments
+            If match.Value IsNot "" Then
+                changedLines &= line & vbCrLf
+                Continue For
+            End If
+            'The line is not a comment, go ahead
+
+            'Find lines that contain GOTO, GOSUB or THEN
+            match = Regex.Match(line, "(GOTO|GOSUB|THEN)", RegexOptions.IgnoreCase)
+            If match.Value Is "" Then
+                changedLines &= line & vbCrLf
+                Continue For
+            End If
+            'The line contains GOTO, GOSUB or THEN, go ahead
+
+            match = Regex.Match(line, "(GOTO|GOSUB|THEN) *[0-9]+$", RegexOptions.IgnoreCase)
+            If match.Value IsNot "" Then
+                'The line contains GOTO, GOSUB or THEN followed by constant line number at the end of line.
+                Dim line_no As Match = Regex.Match(match.Value, "[0-9]+$") 'get the original line number reference
+                line = Regex.Replace(line, "GOTO *[0-9]+$", "GOTO " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
+                line = Regex.Replace(line, "GOSUB *[0-9]+$", "GOSUB " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
+                line = Regex.Replace(line, "THEN *[0-9]+$", "THEN " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
+                changedLines &= line & vbCrLf
+                Continue For
+            End If
+            'The line contains GOTO, GOSUB or THEN, but with variable, label, or plain string insted of constant line number
+
+            match = Regex.Match(line, "(GOTO|GOSUB|THEN) *"".*""", RegexOptions.IgnoreCase)
+            If match.Value IsNot "" Then
+                'The line contains GOTO, GOSUB or THEN with a label, it is safe to copy unchanged.
+                changedLines &= line & vbCrLf
+                Continue For
+            End If
+
+            match = Regex.Match(line, "(GOTO|GOSUB|THEN) *.*\$", RegexOptions.IgnoreCase)
+            If match.Value IsNot "" Then
+                'The line contains GOTO, GOSUB or THEN with a string variable ($), it is safe to copy unchanged.
+                changedLines &= line & vbCrLf
+                Continue For
+            End If
+
+            match = Regex.Match(line, "^ *[0-9]+")
+            txtLog.Text &= vbCrLf & "Warning: At line " & match.Value.Trim() & ": GOTO/GOSUB/THEN with non-constant line number found! Please adjust logic manually!" & vbCrLf & vbCrLf
+
+            changedLines &= line & vbCrLf
+        Next
+
+        'Replace the original file if the Overwrite option is checked.
+        If optOverwrite.Checked Then
+            My.Computer.FileSystem.WriteAllText(finalFile, changedLines, False)
+        Else
+            If My.Computer.FileSystem.FileExists(finalFile) Then
+                Dim index As Integer = 1
+                Do While My.Computer.FileSystem.FileExists(String.Concat(finalFile.AsSpan(0, finalFile.Length - 4), " (" & index & ").BAS"))
+                    index += 1
+                Loop
+                My.Computer.FileSystem.WriteAllText(String.Concat(finalFile.AsSpan(0, finalFile.Length - 4), " (" & index & ").BAS"), changedLines, False)
+            End If
+        End If
+    End Sub
+
+    Private Sub optRenumber_CheckedChanged(sender As Object, e As EventArgs) Handles optRenumber.CheckedChanged
+        If optRenumber.Checked Then
+            numStart.Enabled = True
+            numStep.Enabled = True
+            grpOutput.Enabled = False
+            grpFilename.Enabled = False
+        Else
+            numStart.Enabled = False
+            numStep.Enabled = False
+            grpOutput.Enabled = True
+            grpFilename.Enabled = True
+        End If
     End Sub
 End Class

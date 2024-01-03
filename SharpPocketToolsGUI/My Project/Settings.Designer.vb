@@ -113,6 +113,42 @@ Namespace My
                 Me("sharpFileName") = value
             End Set
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("10")>  _
+        Public Property startLine() As Integer
+            Get
+                Return CType(Me("startLine"),Integer)
+            End Get
+            Set
+                Me("startLine") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("10")>  _
+        Public Property stepLine() As Integer
+            Get
+                Return CType(Me("stepLine"),Integer)
+            End Get
+            Set
+                Me("stepLine") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("0")>  _
+        Public Property operation() As Integer
+            Get
+                Return CType(Me("operation"),Integer)
+            End Get
+            Set
+                Me("operation") = value
+            End Set
+        End Property
     End Class
 End Namespace
 
