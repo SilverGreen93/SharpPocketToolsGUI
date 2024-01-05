@@ -447,6 +447,10 @@ Public Class frmMain
                     Dim line_no As Match = Regex.Match(m.Value, "[0-9]+") 'get the original line number reference
                     editLine &= line.Substring(curIndex, m.Index + line_no.Index - curIndex) 'copy the line until the match including GOSUB
                     curIndex = m.Index + line_no.Index + line_no.Length 'position the index after the old line number
+                    If Not matchMap.Contains(line_no.Value.Trim()) Then
+                        Dim lineMatch = Regex.Match(line, "^ *[0-9]+")
+                        txtLog.Text &= vbCrLf & "Warning: Invalid line reference at line " & lineMatch.Value.Trim() & ": Line " & line_no.Value.Trim() & " does not exist!" & vbCrLf & vbCrLf
+                    End If
                     editLine &= matchMap(line_no.Value.Trim()) 'add the new line number
                 Next
                 editLine &= line.Substring(curIndex, line.Length - curIndex) 'copy the rest of the line untill the end
@@ -457,6 +461,10 @@ Public Class frmMain
             If match.Success Then
                 'The line contains GOTO, GOSUB or THEN followed by constant line number at the end of line.
                 Dim line_no As Match = Regex.Match(match.Value, "[0-9]+$") 'get the original line number reference
+                If Not matchMap.Contains(line_no.Value.Trim()) Then
+                    Dim lineMatch = Regex.Match(line, "^ *[0-9]+")
+                    txtLog.Text &= vbCrLf & "Warning: Invalid line reference at line " & lineMatch.Value.Trim() & ": Line " & line_no.Value.Trim() & " does not exist!" & vbCrLf & vbCrLf
+                End If
                 line = Regex.Replace(line, "GOTO *[0-9]+$", "GOTO " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
                 line = Regex.Replace(line, "THEN *[0-9]+$", "THEN " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
                 changedLines &= line & vbCrLf
