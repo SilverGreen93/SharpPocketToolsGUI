@@ -438,12 +438,26 @@ Public Class frmMain
             End If
             'The line contains GOTO, GOSUB or THEN, go ahead
 
-            match = Regex.Match(line, "(GOTO|GOSUB|THEN) *[0-9]+$", RegexOptions.IgnoreCase)
-            If match.Value IsNot "" Then
+            'On a line there can be multiple GOSUB statements. Replace each of them.
+            Dim matches As MatchCollection = Regex.Matches(line, "GOSUB *[0-9]+ *(:|$)", RegexOptions.IgnoreCase) 'find all occurencies
+            If matches.Count > 0 Then
+                Dim editLine As String = "" 'construct a temporary copy of the line with new GOSUB lines replaced
+                Dim curIndex As Integer = 0 'keep the index of current line position
+                For Each m In matches
+                    Dim line_no As Match = Regex.Match(m.Value, "[0-9]+") 'get the original line number reference
+                    editLine &= line.Substring(curIndex, m.Index + line_no.Index - curIndex) 'copy the line until the match including GOSUB
+                    curIndex = m.Index + line_no.Index + line_no.Length 'position the index after the old line number
+                    editLine &= matchMap(line_no.Value.Trim()) 'add the new line number
+                Next
+                editLine &= line.Substring(curIndex, line.Length - curIndex) 'copy the rest of the line untill the end
+                line = editLine
+            End If
+
+            match = Regex.Match(line, "(GOTO|THEN) *[0-9]+$", RegexOptions.IgnoreCase)
+            If match.Success Then
                 'The line contains GOTO, GOSUB or THEN followed by constant line number at the end of line.
                 Dim line_no As Match = Regex.Match(match.Value, "[0-9]+$") 'get the original line number reference
                 line = Regex.Replace(line, "GOTO *[0-9]+$", "GOTO " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
-                line = Regex.Replace(line, "GOSUB *[0-9]+$", "GOSUB " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
                 line = Regex.Replace(line, "THEN *[0-9]+$", "THEN " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
                 changedLines &= line & vbCrLf
                 Continue For
