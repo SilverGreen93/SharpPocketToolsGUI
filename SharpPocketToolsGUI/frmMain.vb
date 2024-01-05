@@ -1,4 +1,4 @@
-﻿Imports System.ComponentModel
+Imports System.ComponentModel
 Imports System.IO
 Imports System.Text.RegularExpressions
 
@@ -405,7 +405,7 @@ Public Class frmMain
                     Return
                 End If
                 match = Regex.Match(line, "^ *[0-9]+") 'match the number at the start of the line
-                If match.Value IsNot "" Then
+                If match.Success Then
                     matchMap.Add(match.Value.Trim(), lineIndex)
                     Dim newLine = Regex.Replace(line, "^ *[0-9]+", lineIndex.ToString().PadLeft(5))
                     newLines.Add(newLine)
@@ -424,7 +424,7 @@ Public Class frmMain
         'Parse lines again to find GOTO or GOSUB statements to replace the line numbers
         For Each line In newLines
             match = Regex.Match(line, "^ *[']") 'skip lines starting with comments
-            If match.Value IsNot "" Then
+            If match.Success Then
                 changedLines &= line & vbCrLf
                 Continue For
             End If
@@ -432,7 +432,7 @@ Public Class frmMain
 
             'Find lines that contain GOTO, GOSUB or THEN
             match = Regex.Match(line, "(GOTO|GOSUB|THEN)", RegexOptions.IgnoreCase)
-            If match.Value Is "" Then
+            If Not match.Success Then
                 changedLines &= line & vbCrLf
                 Continue For
             End If
@@ -451,14 +451,14 @@ Public Class frmMain
             'The line contains GOTO, GOSUB or THEN, but with variable, label, or plain string insted of constant line number
 
             match = Regex.Match(line, "(GOTO|GOSUB|THEN) *"".*""", RegexOptions.IgnoreCase)
-            If match.Value IsNot "" Then
+            If match.Success Then
                 'The line contains GOTO, GOSUB or THEN with a label, it is safe to copy unchanged.
                 changedLines &= line & vbCrLf
                 Continue For
             End If
 
             match = Regex.Match(line, "(GOTO|GOSUB|THEN) *.*\$", RegexOptions.IgnoreCase)
-            If match.Value IsNot "" Then
+            If match.Success Then
                 'The line contains GOTO, GOSUB or THEN with a string variable ($), it is safe to copy unchanged.
                 changedLines &= line & vbCrLf
                 Continue For
