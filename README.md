@@ -3,6 +3,7 @@
 ![screenshot](screenshot.png?raw=true)
 
 ## Features
+
 - Convert BASIC programs to WAV or MP3 for loading on real hardware or recording on tape.
 - Use a custom Sharp program filename for the audio file.
 - Convert WAV or MP3 recordings to BASIC programs to easily edit on the computer.
@@ -22,6 +23,7 @@ Thus, the files can be played and recorded on solid state recorders that do not 
 MP3 conversion is enabled by the libmad and libmp3lame from https://app.box.com/s/tzn5ohyh90viedu3u90w2l2pmp2bl41t or https://code.google.com/archive/p/ossbuild/source/default/source
 
 ## Usage
+
 Download the compiled software package from the Releases page, then extract the contents to any location.
 
 Drag and drop the BAS source file to convert to audio file to be loaded on Sharp PC, or the audio file to be converted to the BASIC source file. It supports bulk operation if you drag more than one file at a time. The output file is written in the same directory as the source file.
@@ -33,4 +35,7 @@ To renumber lines in a BASIC file, choose the right option and drag & drop the f
 If there are any issues in the conversion or renumbering process, the log will state the exact issue. For example, if there are GOTO statements that do not jump to a constant line number, you will be prompted to double check and adjust the result manually.
 
 ## Resources
-You can find sample ready made programs for Sharp 1211 here: https://github.com/Robert-van-Engelen/119-Practical-Programs-for-the-TRS-80-Pocket-Computer
+
+Visit my repository [Sharp PC-1211 Programs](https://github.com/SilverGreen93/SharpPrograms) for a collection of my personal programs and sample programs from various other books and sources.
+
+Also, you can find all the programs from the book _119 Practical Programs for the TRS-80_ in the following GitHub repo, thanks to [Robert van Engelen](https://github.com/Robert-van-Engelen): [119 Practical Programs for the TRS-80 Pocket Computer](https://github.com/Robert-van-Engelen/119-Practical-Programs-for-the-TRS-80-Pocket-Computer)
