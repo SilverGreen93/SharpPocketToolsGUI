@@ -219,7 +219,7 @@ Public Class frmMain
             End If
         End If
 
-        ret = ExecuteProcess("ptools\wav2bin.exe", "--pc=" & cmbPcModel.Text & " """ & wavFile & """ """ & basFile & """", out, True, False)
+        ret = ExecuteProcess("ptools\wav2bin.exe", "--utf8=no --pc=" & cmbPcModel.Text & " """ & wavFile & """ """ & basFile & """", out, True, False)
         txtLog.Text &= out & vbCrLf
         If ret <> 0 Then
             txtLog.Text &= vbCrLf & "wav2bin returned error " & ret & "!" & vbCrLf
@@ -488,14 +488,14 @@ Public Class frmMain
 
         'Replace the original file if the Overwrite option is checked.
         If optOverwrite.Checked Then
-            My.Computer.FileSystem.WriteAllText(finalFile, changedLines, False)
+            My.Computer.FileSystem.WriteAllText(finalFile, changedLines, False, System.Text.Encoding.ASCII)
         Else
             If My.Computer.FileSystem.FileExists(finalFile) Then
                 Dim index As Integer = 1
                 Do While My.Computer.FileSystem.FileExists(String.Concat(finalFile.AsSpan(0, finalFile.Length - 4), " (" & index & ").BAS"))
                     index += 1
                 Loop
-                My.Computer.FileSystem.WriteAllText(String.Concat(finalFile.AsSpan(0, finalFile.Length - 4), " (" & index & ").BAS"), changedLines, False)
+                My.Computer.FileSystem.WriteAllText(String.Concat(finalFile.AsSpan(0, finalFile.Length - 4), " (" & index & ").BAS"), changedLines, False, System.Text.Encoding.ASCII)
             End If
         End If
     End Sub
