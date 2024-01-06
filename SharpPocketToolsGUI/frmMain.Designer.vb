@@ -265,7 +265,7 @@ Partial Class frmMain
         ' numStep
         ' 
         numStep.Enabled = False
-        numStep.Location = New Point(380, 16)
+        numStep.Location = New Point(380, 17)
         numStep.Margin = New Padding(3, 2, 3, 2)
         numStep.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
         numStep.Name = "numStep"
