@@ -423,6 +423,8 @@ Public Class frmMain
 
         'Parse lines again to find GOTO or GOSUB statements to replace the line numbers
         For Each line In newLines
+            Dim goSubEncountered As Boolean = False
+
             match = Regex.Match(line, "^ *[']") 'skip lines starting with comments
             If match.Success Then
                 changedLines &= line & vbCrLf
@@ -433,6 +435,7 @@ Public Class frmMain
             'Find lines that contain GOTO, GOSUB or THEN
             match = Regex.Match(line, "(GOTO|GOSUB|THEN)", RegexOptions.IgnoreCase)
             If Not match.Success Then
+                'If the line does not contain GOTO, GOSUB or THEN, skip it.
                 changedLines &= line & vbCrLf
                 Continue For
             End If
@@ -455,6 +458,8 @@ Public Class frmMain
                 Next
                 editLine &= line.Substring(curIndex, line.Length - curIndex) 'copy the rest of the line untill the end
                 line = editLine
+                'Do not Continue For here, as there might be other GOTO or THEN statements in the same line
+                goSubEncountered = True
             End If
 
             match = Regex.Match(line, "(GOTO|THEN) *[0-9]+$", RegexOptions.IgnoreCase)
@@ -463,7 +468,7 @@ Public Class frmMain
                 Dim line_no As Match = Regex.Match(match.Value, "[0-9]+$") 'get the original line number reference
                 If Not matchMap.Contains(line_no.Value.Trim()) Then
                     Dim lineMatch = Regex.Match(line, "^ *[0-9]+")
-                    txtLog.Text &= vbCrLf & "Warning: Invalid line reference at line " & lineMatch.Value.Trim() & ": Line " & line_no.Value.Trim() & " does not exist!" & vbCrLf & vbCrLf
+                    txtLog.Text &= vbCrLf & "Warning: Invalid line reference at line " & lineMatch.Value.Trim() & ": Line " & line_no.Value.Trim() & " does not exist!" & vbCrLf
                 End If
                 line = Regex.Replace(line, "GOTO *[0-9]+$", "GOTO " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
                 line = Regex.Replace(line, "THEN *[0-9]+$", "THEN " & matchMap(line_no.Value.Trim()), RegexOptions.IgnoreCase)
@@ -486,9 +491,11 @@ Public Class frmMain
                 Continue For
             End If
 
-            match = Regex.Match(line, "^ *[0-9]+")
-            txtLog.Text &= vbCrLf & "Warning: At line " & match.Value.Trim() & ": GOTO/GOSUB/THEN with non-constant line number found! Please adjust logic manually!" & vbCrLf & vbCrLf
-
+            If Not goSubEncountered Then
+                'If there was a GOSUB statement and it was not changed, it means that it was GOSUB with integer variable
+                match = Regex.Match(line, "^ *[0-9]+")
+                txtLog.Text &= vbCrLf & "Warning: At line " & match.Value.Trim() & ": GOTO/GOSUB/THEN with non-constant line number found! Please adjust logic manually!" & vbCrLf
+            End If
             changedLines &= line & vbCrLf
         Next
 
