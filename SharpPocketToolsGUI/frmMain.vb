@@ -4,8 +4,6 @@ Imports System.Text.RegularExpressions
 
 Public Class frmMain
 
-    Dim filesToPrcess As List(Of String)
-
     ''' <summary>
     ''' Execute a process, wait for it to finish and redirect output if needed.
     ''' </summary>
@@ -50,47 +48,35 @@ Public Class frmMain
     End Function
 
     ''' <summary>
-    ''' Processes the files one by one and calls the required function based by the file extension.
+    ''' Processes the file and calls the required function based by the file extension.
     ''' </summary>
-    Sub ProcessFiles()
+    Sub ProcessFile(file As String)
         Dim ret As Integer = 0
 
-        For Each file In filesToPrcess
-            txtLog.Text &= "Processing " & file & vbCrLf & vbCrLf
-            If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) Then
-                Dim sharpFileName As String
-                If optUseFilename.Checked = True Then
-                    'Use the specified file name
-                    sharpFileName = txtFileName.Text.ToUpper()
+        If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) Then
+            Dim sharpFileName As String
+            If optUseFilename.Checked = True Then
+                'Use the specified file name
+                sharpFileName = txtFileName.Text.ToUpper()
+            Else
+                If Path.GetFileNameWithoutExtension(file).Length > txtFileName.MaxLength Then
+                    'Truncate the file name if it is longer than 7 characters (or 16 for Sharp 1500)
+                    sharpFileName = Path.GetFileNameWithoutExtension(file).Substring(0, txtFileName.MaxLength).ToUpper()
+                    txtLog.Text &= "Warning! Filename is longer than " & txtFileName.MaxLength & " characters! It will be truncated to " & sharpFileName & vbCrLf
                 Else
-                    If Path.GetFileNameWithoutExtension(file).Length > txtFileName.MaxLength Then
-                        'Truncate the file name if it is longer than 7 characters (or 16 for Sharp 1500)
-                        sharpFileName = Path.GetFileNameWithoutExtension(file).Substring(0, txtFileName.MaxLength).ToUpper()
-                        txtLog.Text &= "Warning! Filename is longer than " & txtFileName.MaxLength & " characters! It will be truncated to " & sharpFileName & vbCrLf & vbCrLf
-                    Else
-                        sharpFileName = Path.GetFileNameWithoutExtension(file).ToUpper()
-                    End If
+                    sharpFileName = Path.GetFileNameWithoutExtension(file).ToUpper()
                 End If
-                ret = ProcessBAS(file, sharpFileName)
-            ElseIf file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) Then
-                ret = ProcessWAV(file, False)
-            ElseIf file.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) Then
-                ret = ProcessWAV(file, True)
             End If
-            If ret = -1 Then
-                Exit For
-            End If
-            txtLog.Text &= "---------------------------------------------------------------------" & vbCrLf
-        Next
+            ret = ProcessBAS(file, sharpFileName)
+        ElseIf file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) Then
+            ret = ProcessWAV(file, False)
+        ElseIf file.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) Then
+            ret = ProcessWAV(file, True)
+        End If
 
         If ret = -1 Then
-            txtLog.Text &= vbCrLf & "Please check output above!" & vbCrLf
+            txtLog.Text &= vbCrLf & "Errors encountered while processing " & file & " Please check output above!" & vbCrLf
         End If
-        txtLog.Text &= "Done." & vbCrLf
-
-        'Always scroll the Log to the end.
-        txtLog.SelectionStart = txtLog.Text.Length
-        txtLog.ScrollToCaret()
     End Sub
 
     ''' <summary>
@@ -256,7 +242,6 @@ Public Class frmMain
 
     Private Sub frmMain_DragDrop(sender As Object, e As DragEventArgs) Handles MyBase.DragDrop
         Dim files As String() = e.Data.GetData(DataFormats.FileDrop)
-        filesToPrcess.Clear()
         txtLog.Clear()
 
         'Add only the supported files to the process queue
@@ -272,17 +257,20 @@ Public Class frmMain
                 If file.EndsWith(".bas", StringComparison.OrdinalIgnoreCase) OrElse
                 file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) OrElse
                 file.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) Then
-                    filesToPrcess.Add(file)
-                    txtLog.Text &= "Will process " & file & vbCrLf
+                    txtLog.Text &= "Processing " & file & vbCrLf & vbCrLf
+                    ProcessFile(file)
                 Else
                     txtLog.Text &= "Unsupported " & file & vbCrLf
                 End If
             End If
+            txtLog.Text &= "----------------------------------------------------------------------" & vbCrLf
         Next
 
-        txtLog.Text &= "====================================================================" & vbCrLf & vbCrLf
+        txtLog.Text &= "Done." & vbCrLf
 
-        ProcessFiles()
+        'Always scroll the Log to the end.
+        txtLog.SelectionStart = txtLog.Text.Length
+        txtLog.ScrollToCaret()
     End Sub
 
     Private Sub frmMain_DragEnter(sender As Object, e As DragEventArgs) Handles MyBase.DragEnter
@@ -293,7 +281,6 @@ Public Class frmMain
 
     Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Text = My.Application.Info.Title & " v" & My.Application.Info.Version.Major & "." & My.Application.Info.Version.Minor
-        filesToPrcess = New List(Of String)
 
         'Load settings
         cmbPcModel.Text = My.Settings.pcModel
