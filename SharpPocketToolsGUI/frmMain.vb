@@ -135,6 +135,8 @@ Public Class frmMain
             Return -1
         End If
 
+        txtLog.Text &= sharpFileName & " will use " & My.Computer.FileSystem.GetFileInfo(imgFile).Length & " steps." & vbCrLf & vbCrLf
+
         txtLog.Text &= "Deleting temporary img file: " & imgFile & vbCrLf & vbCrLf
         My.Computer.FileSystem.DeleteFile(imgFile)
 
