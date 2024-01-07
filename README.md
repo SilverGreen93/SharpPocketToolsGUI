@@ -5,6 +5,7 @@
 ## Features
 
 - Convert BASIC programs to WAV or MP3 for loading on real hardware or recording on tape.
+- Display the number of steps the program will occupy when loaded into the Sharp PC.
 - Use a custom Sharp program filename for the audio file.
 - Convert WAV or MP3 recordings to BASIC programs to easily edit on the computer.
 - Renumber BASIC lines to make room for more lines or space the instructions evenly. This will also change GOTO, GOSUB or THEN keywords to match the new line numbers.
